@@ -3,11 +3,10 @@ var keys = require("./keys.js")
 var axios = require("axios")
 var moment = require("moment")
 var fs = require("fs")
-//var spotify = new Spotify(keys.spotify)
+var Spotify = require('node-spotify-api');
+var spotify = new Spotify(keys.spotify)
 var nameOf = process.argv[3]
-
-
-
+var command = process.argv[2]
 
 showBands = function (bandName) {
     var queryURL = "https://rest.bandsintown.com/artists/" + bandName + "/events?app_id=codingbootcamp"
@@ -29,35 +28,71 @@ showBands = function (bandName) {
 
 
 var showMovies = function (movieName) {
-    var queryURL = "http://www.omdbapi.com/?t=" + movieName + "&y=&plot=short&apikey=trilogy" 
+    var queryURL = "http://www.omdbapi.com/?t=" + movieName + "&y=&plot=short&apikey=trilogy"
     axios.get(queryURL).then(
         function (results) {
             data = results.data
-                console.log("Title: " + data.Title)
-                console.log("Year released: " + data.Year)
-                console.log("IMDB rating: " + data.imdbRating)
-                console.log("Language: " + data.Language)
-                console.log("Plot: " + data.Plot)
-                console.log("Actors: " + data.Actors)
+            console.log("Title: " + data.Title)
+            console.log("Year released: " + data.Year)
+            console.log("IMDB rating: " + data.imdbRating)
+            console.log("Language: " + data.Language)
+            console.log("Plot: " + data.Plot)
+            console.log("Actors: " + data.Actors)
 
-            
+
         }
     )
 
 }
 
 
-if (process.argv[2] === "concert-this") {
-    showBands(nameOf)
-} else if (process.argv[2] === "spotify-this-song") {
-    showSongs(nameOf)
-} else if (process.argv[2] === "movie-this") {
-    if(nameOf === " "){
-        showMovies("Mr. Nobody")
-    }
-    else{
-    showMovies(nameOf)
-    }
-} else if (process.argv[2] === "do-what-it-says") {
-    showRandom(nameOf)
+var showSongs = function (songName) {
+    spotify.search({
+            type: 'track',
+            query: songName,
+            limit: 1
+        })
+        .then(function (response) {
+            console.log("Artist: " + response.tracks.items[0].artists[0].name)
+            console.log("Song Title: " + response.tracks.items[0].name)
+            console.log("Preview: " + response.tracks.items[0].external_urls.spotify)
+            console.log("Album: " + response.tracks.items[0].album.name)
+        })
 }
+
+
+
+var showRandom = function () {
+fs.readFile("random.txt","utf8", function(error, data){
+    console.log(data)
+
+    var dataArray = data.split(",")
+
+    commands(dataArray[0],dataArray[1])
+    
+
+})
+}
+
+var commands = function(arg1, arg2){
+if (arg1 === "concert-this") {
+    showBands(arg2)
+} else if (arg1 === "spotify-this-song") {
+    if (arg2 === "") {
+        showSongs("Africa")
+    } else {
+        showSongs(arg2)
+    }
+} else if (arg1 === "movie-this") {
+    if (arg2 === "") {
+        showMovies("Mr. Nobody")
+    } else {
+        showMovies(arg2)
+    }
+} else if (arg1 === "do-what-it-says") {
+    showRandom()
+}
+}
+
+
+commands(command,nameOf)
